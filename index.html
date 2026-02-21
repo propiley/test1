@@ -28,7 +28,7 @@
         .container {
             background: var(--card);
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             padding: 30px;
@@ -67,6 +67,31 @@
         .mode-btn.study { background: var(--success); }
         .mode-btn.test { background: var(--warning); color: #000; }
         
+        /* Test Settings */
+        .test-settings {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            display: none;
+        }
+        .test-settings.visible { display: block; }
+        .test-settings label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #0369a1;
+        }
+        .test-settings select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        
         /* Progress */
         .progress-bar {
             height: 8px;
@@ -81,6 +106,83 @@
             width: 0%;
             transition: width 0.3s ease;
         }
+        
+        /* Study Mode - Card Scroll */
+        .study-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .study-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .study-card:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .study-card.expanded {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+        .study-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .study-card-number {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .study-card-preview {
+            margin-top: 10px;
+            color: #6b7280;
+            font-size: 0.95rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .study-card-answer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        .study-card-answer.visible { display: block; }
+        .study-card-answer strong {
+            color: var(--success);
+        }
+        .study-card-ref {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+        
+        /* Study Mode Controls */
+        .study-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .btn-speak-all { background: #7c3aed; color: white; }
+        .btn-mark-all { background: var(--success); color: white; }
         
         /* Question */
         .question-box {
@@ -100,7 +202,7 @@
             font-weight: normal;
         }
         
-        /* Answer Box (Study Mode) */
+        /* Answer Box (Study Mode - Single) */
         .answer-box {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -185,6 +287,39 @@
         .btn-dont-know { background: var(--danger); color: white; }
         .btn-next { background: var(--text); color: white; }
         .btn-submit { background: var(--primary); color: white; }
+        .btn-speak { background: #7c3aed; color: white; }
+        .btn-stop { background: #6b7280; color: white; }
+        
+        /* Voice Controls */
+        .voice-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .voice-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        .voice-indicator.active {
+            color: var(--success);
+        }
+        .speaking-animation {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
         
         /* Stats */
         .stats {
@@ -219,6 +354,8 @@
             .container { padding: 15px; }
             .question-box { font-size: 1.1rem; }
             button { width: 100%; }
+            .voice-controls { flex-direction: column; }
+            .study-cards-container { max-height: 50vh; }
         }
         
         .hidden { display: none !important; }
@@ -236,24 +373,80 @@
     <!-- Start Screen -->
     <div id="start-screen" class="start-screen">
         <h2>Выберите режим обучения</h2>
-        <button class="mode-btn study" onclick="startStudyMode()">📚 Изучение вопросов</button>
-        <p style="color: #6b7280; font-size: 0.9rem;">Просматривайте вопросы с ответами, отмечайте известные</p>
         
-        <button class="mode-btn test" onclick="startTestMode()">🎯 Тест (30 вопросов)</button>
-        <p style="color: #6b7280; font-size: 0.9rem;">Проверьте знания: 30 случайных вопросов с выбором ответа</p>
+        <button class="mode-btn study" onclick="showTestSettings()">📚 Изучение вопросов</button>
+        <p style="color: #6b7280; font-size: 0.9rem;">Просматривайте вопросы в виде карточек, прокручивайте ленту</p>
+        
+        <button class="mode-btn test" onclick="showTestSettings()">🎯 Тест</button>
+        <p style="color: #6b7280; font-size: 0.9rem;">Проверьте знания с выбором количества вопросов</p>
+        
+        <!-- Test Settings Panel -->
+        <div class="test-settings" id="test-settings">
+            <label for="question-count">Количество вопросов в тесте:</label>
+            <select id="question-count">
+                <option value="10">10 вопросов</option>
+                <option value="20">20 вопросов</option>
+                <option value="30" selected>30 вопросов</option>
+                <option value="50">50 вопросов</option>
+                <option value="100">100 вопросов</option>
+                <option value="146">Все 146 вопросов</option>
+            </select>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="mode-btn study" style="margin: 0; flex: 1;" onclick="startStudyMode()">Начать изучение</button>
+                <button class="mode-btn test" style="margin: 0; flex: 1;" onclick="startTestMode()">Начать тест</button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 15px; background: #f0f9ff; border-radius: 8px;">
+            <p style="margin: 0; color: #0369a1; font-size: 0.9rem;">
+                🔊 <strong>Функции:</strong> Озвучивание вопросов и ответов! Прокрутка карточек в режиме изучения.
+            </p>
+        </div>
     </div>
 
-    <!-- Quiz Screen -->
+    <!-- Study Mode - Cards View -->
+    <div id="study-cards-screen" class="hidden">
+        <div class="voice-controls">
+            <button class="btn-speak" id="btn-speak-study" onclick="speakCurrentCard()">🔊 Озвучить текущий</button>
+            <button class="btn-speak btn-speak-all" onclick="speakAllRemaining()">🔊 Озвучить все</button>
+            <button class="btn-stop" id="btn-stop-study" onclick="stopSpeaking()" style="display: none;">⏹ Стоп</button>
+            <div class="voice-indicator" id="voice-indicator-study">
+                <span>🎤 Готов к озвучиванию</span>
+            </div>
+        </div>
+        
+        <div class="study-controls">
+            <button class="btn-mark-all" onclick="markAllKnown()">✅ Отметить все как известные</button>
+        </div>
+        
+        <div class="study-cards-container" id="study-cards-container">
+            <!-- Cards will be generated here -->
+        </div>
+        
+        <div class="stats" id="study-stats">
+            Изучено: известно 0 | нужно повторить 0
+        </div>
+        
+        <div class="controls" style="margin-top: 20px;">
+            <button class="btn-next" onclick="backToStart()">← На главную</button>
+        </div>
+    </div>
+
+    <!-- Quiz Screen (Test Mode) -->
     <div id="quiz-screen" class="hidden">
+        <!-- Voice Controls -->
+        <div class="voice-controls">
+            <button class="btn-speak" id="btn-speak" onclick="speakText()">🔊 Озвучить</button>
+            <button class="btn-stop" id="btn-stop" onclick="stopSpeaking()" style="display: none;">⏹ Стоп</button>
+            <div class="voice-indicator" id="voice-indicator">
+                <span>🎤 Готов к озвучиванию</span>
+            </div>
+        </div>
+
         <div class="question-box">
             <span class="source-tag" id="q-source">Л70 Ст.1</span>
             <div id="q-text">Загрузка вопроса...</div>
-        </div>
-
-        <!-- Study Mode Answer -->
-        <div class="answer-box" id="answer-box">
-            <strong>Правильный ответ:</strong>
-            <p id="a-text" style="margin: 10px 0 0 0;"></p>
         </div>
 
         <!-- Test Mode Options -->
@@ -266,15 +459,6 @@
             <div class="feedback-ref" id="feedback-ref"></div>
         </div>
 
-        <!-- Controls for Study Mode -->
-        <div class="controls" id="controls-study-initial">
-            <button class="btn-show" onclick="showAnswer()">Показать ответ</button>
-        </div>
-        <div class="controls" id="controls-study-assessment" style="display: none;">
-            <button class="btn-know" onclick="recordStudyResult(true)">Я знал это</button>
-            <button class="btn-dont-know" onclick="recordStudyResult(false)">Не знал</button>
-        </div>
-        
         <!-- Controls for Test Mode -->
         <div class="controls" id="controls-test" style="display: none;">
             <button class="btn-submit" onclick="submitTestAnswer()">Ответить</button>
@@ -450,22 +634,24 @@
 
     // State
     let mode = null;
-    let currentIdx = 0;
     let studyKnown = 0;
     let studyUnknown = 0;
     let testQuestions = [];
     let testScore = 0;
     let testCurrentIdx = 0;
     let selectedOption = null;
+    let isSpeaking = false;
+    let currentUtterance = null;
+    let currentCardIdx = 0;
 
     // DOM Elements
     const startScreen = document.getElementById('start-screen');
+    const studyCardsScreen = document.getElementById('study-cards-screen');
     const quizScreen = document.getElementById('quiz-screen');
     const resultScreen = document.getElementById('result-screen');
+    const testSettings = document.getElementById('test-settings');
     const qText = document.getElementById('q-text');
     const qSource = document.getElementById('q-source');
-    const aText = document.getElementById('a-text');
-    const answerBox = document.getElementById('answer-box');
     const optionsBox = document.getElementById('options-box');
     const feedbackBox = document.getElementById('feedback-box');
     const feedbackTitle = document.getElementById('feedback-title');
@@ -474,26 +660,294 @@
     const progressBar = document.getElementById('progress');
     const questionCounter = document.getElementById('question-counter');
     const statsBar = document.getElementById('stats-bar');
+    const btnSpeak = document.getElementById('btn-speak');
+    const btnStop = document.getElementById('btn-stop');
+    const voiceIndicator = document.getElementById('voice-indicator');
 
-    // Mode Selection
+    // Show test settings panel
+    function showTestSettings() {
+        testSettings.classList.add('visible');
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    // Speech Synthesis Setup
+    function initSpeech() {
+        if ('speechSynthesis' in window) {
+            btnSpeak.disabled = false;
+            console.log('Speech synthesis supported');
+        } else {
+            btnSpeak.disabled = true;
+            btnSpeak.textContent = '🔇 Озвучка не поддерживается';
+            voiceIndicator.innerHTML = '<span>⚠️ Браузер не поддерживает озвучивание</span>';
+        }
+    }
+
+    function speakText() {
+        if (!('speechSynthesis' in window)) {
+            alert('Ваш браузер не поддерживает озвучивание текста');
+            return;
+        }
+
+        stopSpeaking();
+
+        let textToSpeak = '';
+        const q = testQuestions[testCurrentIdx];
+        textToSpeak = `Вопрос ${testCurrentIdx + 1}. ${q.q}`;
+        
+        if (feedbackBox.classList.contains('visible')) {
+            textToSpeak += `. Правильный ответ. ${q.a}`;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'ru-RU';
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        const voices = speechSynthesis.getVoices();
+        const ruVoice = voices.find(voice => voice.lang.includes('ru') || voice.lang.includes('RU'));
+        if (ruVoice) {
+            utterance.voice = ruVoice;
+        }
+
+        utterance.onstart = () => {
+            isSpeaking = true;
+            btnSpeak.style.display = 'none';
+            btnStop.style.display = 'inline-block';
+            voiceIndicator.classList.add('active');
+            voiceIndicator.innerHTML = '<span class="speaking-animation"></span><span>Озвучивание...</span>';
+        };
+
+        utterance.onend = () => {
+            isSpeaking = false;
+            btnSpeak.style.display = 'inline-block';
+            btnStop.style.display = 'none';
+            voiceIndicator.classList.remove('active');
+            voiceIndicator.innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+        };
+
+        utterance.onerror = () => {
+            isSpeaking = false;
+            btnSpeak.style.display = 'inline-block';
+            btnStop.style.display = 'none';
+            voiceIndicator.classList.remove('active');
+            voiceIndicator.innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+        };
+
+        currentUtterance = utterance;
+        speechSynthesis.speak(utterance);
+    }
+
+    function speakCurrentCard() {
+        if (!('speechSynthesis' in window)) {
+            alert('Ваш браузер не поддерживает озвучивание текста');
+            return;
+        }
+
+        stopSpeaking();
+
+        const q = questions[currentCardIdx];
+        const textToSpeak = `Вопрос ${currentCardIdx + 1}. ${q.q}. Правильный ответ. ${q.a}`;
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'ru-RU';
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        const voices = speechSynthesis.getVoices();
+        const ruVoice = voices.find(voice => voice.lang.includes('ru') || voice.lang.includes('RU'));
+        if (ruVoice) {
+            utterance.voice = ruVoice;
+        }
+
+        utterance.onstart = () => {
+            isSpeaking = true;
+            document.getElementById('btn-speak-study').style.display = 'none';
+            document.getElementById('btn-stop-study').style.display = 'inline-block';
+            document.getElementById('voice-indicator-study').classList.add('active');
+            document.getElementById('voice-indicator-study').innerHTML = '<span class="speaking-animation"></span><span>Озвучивание...</span>';
+        };
+
+        utterance.onend = () => {
+            isSpeaking = false;
+            document.getElementById('btn-speak-study').style.display = 'inline-block';
+            document.getElementById('btn-stop-study').style.display = 'none';
+            document.getElementById('voice-indicator-study').classList.remove('active');
+            document.getElementById('voice-indicator-study').innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+        };
+
+        utterance.onerror = () => {
+            isSpeaking = false;
+            document.getElementById('btn-speak-study').style.display = 'inline-block';
+            document.getElementById('btn-stop-study').style.display = 'none';
+            document.getElementById('voice-indicator-study').classList.remove('active');
+            document.getElementById('voice-indicator-study').innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+        };
+
+        currentUtterance = utterance;
+        speechSynthesis.speak(utterance);
+    }
+
+    function speakAllRemaining() {
+        if (!('speechSynthesis' in window)) {
+            alert('Ваш браузер не поддерживает озвучивание текста');
+            return;
+        }
+
+        stopSpeaking();
+
+        let currentIndex = currentCardIdx;
+        
+        function speakNext() {
+            if (currentIndex >= questions.length) {
+                isSpeaking = false;
+                document.getElementById('btn-speak-study').style.display = 'inline-block';
+                document.getElementById('btn-stop-study').style.display = 'none';
+                document.getElementById('voice-indicator-study').classList.remove('active');
+                document.getElementById('voice-indicator-study').innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+                return;
+            }
+
+            const q = questions[currentIndex];
+            const utterance = new SpeechSynthesisUtterance(`Вопрос ${currentIndex + 1}. ${q.q}. Правильный ответ. ${q.a}`);
+            utterance.lang = 'ru-RU';
+            utterance.rate = 0.95;
+
+            utterance.onend = () => {
+                currentIndex++;
+                if (isSpeaking) {
+                    speakNext();
+                }
+            };
+
+            utterance.onerror = () => {
+                isSpeaking = false;
+                document.getElementById('btn-speak-study').style.display = 'inline-block';
+                document.getElementById('btn-stop-study').style.display = 'none';
+                document.getElementById('voice-indicator-study').classList.remove('active');
+                document.getElementById('voice-indicator-study').innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+            };
+
+            speechSynthesis.speak(utterance);
+        }
+
+        isSpeaking = true;
+        document.getElementById('btn-speak-study').style.display = 'none';
+        document.getElementById('btn-stop-study').style.display = 'inline-block';
+        document.getElementById('voice-indicator-study').classList.add('active');
+        document.getElementById('voice-indicator-study').innerHTML = '<span class="speaking-animation"></span><span>Озвучивание всех...</span>';
+        
+        speakNext();
+    }
+
+    function stopSpeaking() {
+        if ('speechSynthesis' in window && isSpeaking) {
+            speechSynthesis.cancel();
+            isSpeaking = false;
+            btnSpeak.style.display = 'inline-block';
+            btnStop.style.display = 'none';
+            voiceIndicator.classList.remove('active');
+            voiceIndicator.innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+            
+            document.getElementById('btn-speak-study').style.display = 'inline-block';
+            document.getElementById('btn-stop-study').style.display = 'none';
+            document.getElementById('voice-indicator-study').classList.remove('active');
+            document.getElementById('voice-indicator-study').innerHTML = '<span>🎤 Готов к озвучиванию</span>';
+        }
+    }
+
+    if ('speechSynthesis' in window) {
+        speechSynthesis.onvoiceschanged = () => {
+            const voices = speechSynthesis.getVoices();
+            console.log(`Available voices: ${voices.length}`);
+        };
+    }
+
+    // Study Mode - Generate Cards
+    function generateStudyCards() {
+        const container = document.getElementById('study-cards-container');
+        container.innerHTML = '';
+
+        questions.forEach((q, idx) => {
+            const card = document.createElement('div');
+            card.className = 'study-card';
+            card.dataset.index = idx;
+            card.onclick = () => toggleCard(card, idx);
+
+            card.innerHTML = `
+                <div class="study-card-header">
+                    <span>Вопрос ${idx + 1}</span>
+                    <span class="study-card-number">${q.ref}</span>
+                </div>
+                <div class="study-card-preview">${q.q}</div>
+                <div class="study-card-answer">
+                    <strong>Правильный ответ:</strong>
+                    <p style="margin: 10px 0 0 0;">${q.a}</p>
+                    <div class="study-card-ref">${q.ref}</div>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    function toggleCard(card, idx) {
+        const answer = card.querySelector('.study-card-answer');
+        const isExpanded = card.classList.contains('expanded');
+
+        // Close all other cards
+        document.querySelectorAll('.study-card').forEach(c => {
+            if (c !== card) {
+                c.classList.remove('expanded');
+                c.querySelector('.study-card-answer').classList.remove('visible');
+            }
+        });
+
+        // Toggle current card
+        if (isExpanded) {
+            card.classList.remove('expanded');
+            answer.classList.remove('visible');
+        } else {
+            card.classList.add('expanded');
+            answer.classList.add('visible');
+            currentCardIdx = idx;
+        }
+    }
+
+    function markAllKnown() {
+        studyKnown = questions.length;
+        studyUnknown = 0;
+        document.getElementById('study-stats').textContent = `Изучено: известно ${studyKnown} | нужно повторить ${studyUnknown}`;
+        alert('Все вопросы отмечены как известные!');
+    }
+
     function startStudyMode() {
         mode = 'study';
         startScreen.classList.add('hidden');
-        quizScreen.classList.remove('hidden');
-        loadStudyQuestion();
+        studyCardsScreen.classList.remove('hidden');
+        quizScreen.classList.add('hidden');
+        generateStudyCards();
+        updateStudyStats();
     }
 
+    function updateStudyStats() {
+        document.getElementById('study-stats').textContent = `Изучено: известно ${studyKnown} | нужно повторить ${studyUnknown}`;
+    }
+
+    // Test Mode
     function startTestMode() {
         mode = 'test';
-        testQuestions = getRandomQuestions(30);
+        const count = parseInt(document.getElementById('question-count').value);
+        testQuestions = getRandomQuestions(count);
         testScore = 0;
         testCurrentIdx = 0;
         startScreen.classList.add('hidden');
+        studyCardsScreen.classList.add('hidden');
         quizScreen.classList.remove('hidden');
         loadTestQuestion();
     }
 
-    // Get random questions for test
     function getRandomQuestions(count) {
         const shuffled = [...questions].sort(() => Math.random() - 0.5);
         return shuffled.slice(0, count).map((q, idx) => ({
@@ -502,7 +956,6 @@
         }));
     }
 
-    // Generate options: 1 correct + 3 wrong
     function generateOptions(correctAnswer, questionIdx) {
         const wrongAnswers = questions
             .filter((_, i) => i !== questionIdx)
@@ -514,43 +967,6 @@
         return options.sort(() => Math.random() - 0.5);
     }
 
-    // Study Mode Functions
-    function loadStudyQuestion() {
-        const q = questions[currentIdx];
-        qText.textContent = q.q;
-        qSource.textContent = q.ref;
-        aText.textContent = q.a;
-        
-        questionCounter.textContent = `Вопрос ${currentIdx + 1} из ${questions.length}`;
-        progressBar.style.width = `${(currentIdx / questions.length) * 100}%`;
-        
-        answerBox.classList.remove('visible');
-        optionsBox.innerHTML = '';
-        optionsBox.classList.add('hidden');
-        feedbackBox.classList.remove('visible', 'correct', 'wrong');
-        
-        document.getElementById('controls-study-initial').style.display = 'flex';
-        document.getElementById('controls-study-assessment').style.display = 'none';
-        document.getElementById('controls-test').style.display = 'none';
-        document.getElementById('controls-next').style.display = 'none';
-    }
-
-    function showAnswer() {
-        answerBox.classList.add('visible');
-        document.getElementById('controls-study-initial').style.display = 'none';
-        document.getElementById('controls-study-assessment').style.display = 'flex';
-    }
-
-    function recordStudyResult(known) {
-        if (known) studyKnown++;
-        else studyUnknown++;
-        
-        statsBar.textContent = `Изучено: известно ${studyKnown} | нужно повторить ${studyUnknown}`;
-        document.getElementById('controls-study-assessment').style.display = 'none';
-        document.getElementById('controls-next').style.display = 'flex';
-    }
-
-    // Test Mode Functions
     function loadTestQuestion() {
         const q = testQuestions[testCurrentIdx];
         qText.textContent = q.q;
@@ -559,13 +975,14 @@
         questionCounter.textContent = `Вопрос ${testCurrentIdx + 1} из ${testQuestions.length}`;
         progressBar.style.width = `${(testCurrentIdx / testQuestions.length) * 100}%`;
         
-        // Hide study/feedback elements
-        answerBox.classList.remove('visible');
+        answerBox = document.getElementById('answer-box');
+        if (answerBox) answerBox.classList.remove('visible');
         feedbackBox.classList.remove('visible', 'correct', 'wrong');
-        document.getElementById('controls-study-initial').style.display = 'none';
-        document.getElementById('controls-study-assessment').style.display = 'none';
+        document.getElementById('controls-test').style.display = 'none';
+        document.getElementById('controls-next').style.display = 'none';
         
-        // Show options
+        stopSpeaking();
+        
         optionsBox.classList.remove('hidden');
         optionsBox.innerHTML = '';
         selectedOption = null;
@@ -579,7 +996,6 @@
         });
         
         document.getElementById('controls-test').style.display = 'flex';
-        document.getElementById('controls-next').style.display = 'none';
     }
 
     function selectOption(btn, idx) {
@@ -598,22 +1014,18 @@
         const correctIdx = q.options.indexOf(q.a);
         const buttons = document.querySelectorAll('.option-btn');
         
-        // Disable all buttons
         buttons.forEach(btn => btn.disabled = true);
         
-        // Show feedback
         feedbackBox.classList.add('visible');
         feedbackRef.textContent = `Источник: ${q.ref}`;
         
         if (selectedOption === correctIdx) {
-            // Correct answer
             buttons[selectedOption].classList.add('correct');
             testScore++;
             feedbackBox.classList.add('correct');
             feedbackTitle.textContent = '✅ Правильно!';
             feedbackAnswer.textContent = q.a;
         } else {
-            // Wrong answer
             buttons[selectedOption].classList.add('wrong');
             buttons[correctIdx].classList.add('correct');
             feedbackBox.classList.add('wrong');
@@ -625,16 +1037,10 @@
         document.getElementById('controls-next').style.display = 'flex';
     }
 
-    // Common Next Function
     function nextQuestion() {
-        if (mode === 'study') {
-            currentIdx++;
-            if (currentIdx >= questions.length) {
-                showStudyResults();
-            } else {
-                loadStudyQuestion();
-            }
-        } else if (mode === 'test') {
+        stopSpeaking();
+        
+        if (mode === 'test') {
             testCurrentIdx++;
             if (testCurrentIdx >= testQuestions.length) {
                 showTestResults();
@@ -644,30 +1050,22 @@
         }
     }
 
-    // Results
-    function showStudyResults() {
+    function backToStart() {
+        stopSpeaking();
+        studyCardsScreen.classList.add('hidden');
         quizScreen.classList.add('hidden');
-        resultScreen.style.display = 'block';
-        progressBar.style.width = '100%';
-        
-        const percent = Math.round((studyKnown / questions.length) * 100);
-        document.getElementById('final-score').textContent = `${percent}%`;
-        document.getElementById('result-title').textContent = 'Изучение завершено!';
-        
-        let msg = '';
-        if (percent >= 90) msg = 'Отлично! Вы хорошо усвоили материал.';
-        else if (percent >= 70) msg = 'Хорошо! Но есть вопросы для повторения.';
-        else msg = 'Рекомендуется ещё раз проработать материал.';
-        
-        document.getElementById('result-text').textContent = 
-            `Вы отметили как известные ${studyKnown} из ${questions.length} вопросов. ${msg}`;
-        statsBar.textContent = '';
+        resultScreen.style.display = 'none';
+        startScreen.classList.remove('hidden');
+        testSettings.classList.remove('visible');
+        mode = null;
     }
 
     function showTestResults() {
         quizScreen.classList.add('hidden');
         resultScreen.style.display = 'block';
         progressBar.style.width = '100%';
+        
+        stopSpeaking();
         
         const percent = Math.round((testScore / testQuestions.length) * 100);
         document.getElementById('final-score').textContent = `${percent}%`;
@@ -683,6 +1081,9 @@
             `Правильных ответов: ${testScore} из ${testQuestions.length}. ${msg}`;
         statsBar.textContent = '';
     }
+
+    // Initialize
+    initSpeech();
 </script>
 
 </body>
